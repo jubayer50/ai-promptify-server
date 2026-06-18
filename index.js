@@ -26,6 +26,20 @@ async function run() {
     const database = client.db("aiPromptify");
     const promptCollection = database.collection("prompts");
 
+    // prompts related -----------------------------------------------------------------------------------------
+    app.get("/api/prompts", async (req, res) => {
+      const query = {};
+
+      if (req.query.userId) {
+        query.userId = req.query.userId;
+      }
+
+      const cursor = await promptCollection.find(query);
+      const result = await cursor.toArray();
+
+      res.send(result);
+    });
+
     app.post("/api/prompts", async (req, res) => {
       const promptData = req.body;
       const newPromptData = {
