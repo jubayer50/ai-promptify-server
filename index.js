@@ -66,6 +66,7 @@ async function run() {
       res.send(result);
     });
 
+    // prompt post method
     app.post("/api/prompts", async (req, res) => {
       const promptData = req.body;
       const newPromptData = {
@@ -74,6 +75,25 @@ async function run() {
       };
 
       const result = await promptCollection.insertOne(newPromptData);
+      res.send(result);
+    });
+
+    app.patch("/api/prompts/:id", async (req, res) => {
+      const { id } = req.params;
+      const { increment } = req.body;
+
+      const filter = {
+        _id: new ObjectId(id),
+      };
+
+      const updateCopyCount = {
+        $inc: {
+          copyCount: increment,
+        },
+      };
+
+      const result = await promptCollection.updateOne(filter, updateCopyCount);
+
       res.send(result);
     });
 
