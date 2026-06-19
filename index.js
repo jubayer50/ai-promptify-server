@@ -8,7 +8,7 @@ const port = process.env.PORT || 5000;
 app.use(cors());
 app.use(express.json());
 
-const { MongoClient, ServerApiVersion } = require("mongodb");
+const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const uri = process.env.MONGODB_URI;
 
 const client = new MongoClient(uri, {
@@ -37,6 +37,16 @@ async function run() {
       const cursor = await promptCollection.find(query);
       const result = await cursor.toArray();
 
+      res.send(result);
+    });
+
+    // get prompts single by id
+    app.get("/api/prompts/:id", async (req, res) => {
+      const { id } = req.params;
+
+      const query = { _id: new ObjectId(id) };
+
+      const result = await promptCollection.findOne(query);
       res.send(result);
     });
 
