@@ -24,6 +24,7 @@ async function run() {
     await client.connect();
 
     const database = client.db("aiPromptify");
+    const userCollection = database.collection("user");
     const promptCollection = database.collection("prompts");
 
     // prompts related -----------------------------------------------------------------------------------------
@@ -45,8 +46,23 @@ async function run() {
       const { id } = req.params;
 
       const query = { _id: new ObjectId(id) };
+      const prompt = await promptCollection.findOne(query);
 
-      const result = await promptCollection.findOne(query);
+      if (!prompt) {
+        return res.status(404).send({ message: "prompt not found" });
+      }
+
+      const user = await userCollection.findOne({
+        _id: new ObjectId(prompt.userId),
+      });
+
+      const result = {
+        ...prompt,
+        creatorName: user?.name,
+        creatorEmail: user?.email,
+        creatorImage: user?.image,
+      };
+
       res.send(result);
     });
 
@@ -59,6 +75,15 @@ async function run() {
 
       const result = await promptCollection.insertOne(newPromptData);
       res.send(result);
+    });
+
+    // user related ------------------------------------------------------------------------------------------------
+    app.get("/api/users", async (req, res) => {
+      const query = {};
+
+      if (req.query.userId) {
+        query._id = new ObjectId(req.query.userId);
+      }
     });
 
     await client.db("admin").command({ ping: 1 });
