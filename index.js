@@ -26,6 +26,7 @@ async function run() {
     const database = client.db("aiPromptify");
     const userCollection = database.collection("user");
     const promptCollection = database.collection("prompts");
+    const bookmarkCollection = database.collection("bookmarks");
 
     // prompts related -----------------------------------------------------------------------------------------
     app.get("/api/prompts", async (req, res) => {
@@ -52,12 +53,19 @@ async function run() {
         return res.status(404).send({ message: "prompt not found" });
       }
 
+      // find user
       const user = await userCollection.findOne({
         _id: new ObjectId(prompt.userId),
       });
 
+      // find book mark count
+      const bookmarkCount = await bookmarkCollection.countDocuments({
+        promptId: id,
+      });
+
       const result = {
         ...prompt,
+        bookmarkCount: bookmarkCount,
         creatorName: user?.name,
         creatorEmail: user?.email,
         creatorImage: user?.image,
@@ -104,6 +112,55 @@ async function run() {
       if (req.query.userId) {
         query._id = new ObjectId(req.query.userId);
       }
+    });
+
+    // bookmark related-----------------------------------------------------------------------------------------------------
+    // get bookmark method
+    app.get("/api/bookmarks", async (req, res) => {
+      const query = {};
+
+      if (req.query.userId) {
+        query.userId = req.query.userId;
+      }
+
+      if (req.query.promptId) {
+        query.promptId = req.query.promptId;
+      }
+
+      const result = await bookmarkCollection.findOne(query);
+      res.send(result || {});
+    });
+
+    // bookmark post method
+    app.post("/api/bookmarks", async (req, res) => {
+      const bookmarkData = req.body;
+
+      const isExist = await bookmarkCollection.findOne({
+        userId: bookmarkData.userId,
+        promptId: bookmarkData.promptId,
+      });
+
+      console.log(isExist, "from is exist");
+
+      if (isExist) {
+        return res.status(409).send({ message: "already data exist" });
+      }
+
+      const result = await bookmarkCollection.insertOne(bookmarkData);
+      console.log(result, "from result bookmark");
+      res.send(result);
+    });
+
+    // bookmark delete method
+    app.delete("/api/bookmarks/:id", async (req, res) => {
+      const { id } = req.params;
+      const { userId } = req.query;
+
+      const query = { promptId: id, userId: userId };
+
+      const result = await bookmarkCollection.deleteOne(query);
+
+      res.send(result);
     });
 
     await client.db("admin").command({ ping: 1 });
