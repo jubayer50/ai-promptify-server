@@ -27,6 +27,7 @@ async function run() {
     const userCollection = database.collection("user");
     const promptCollection = database.collection("prompts");
     const bookmarkCollection = database.collection("bookmarks");
+    const reportCollection = database.collection("reports");
 
     // prompts related -----------------------------------------------------------------------------------------
     app.get("/api/prompts", async (req, res) => {
@@ -140,8 +141,6 @@ async function run() {
         promptId: bookmarkData.promptId,
       });
 
-      console.log(isExist, "from is exist");
-
       if (isExist) {
         return res.status(409).send({ message: "already data exist" });
       }
@@ -160,6 +159,40 @@ async function run() {
 
       const result = await bookmarkCollection.deleteOne(query);
 
+      res.send(result);
+    });
+
+    // report related -----------------------------------------------------------------------------------------
+    app.post("/api/reports", async (req, res) => {
+      const data = req.body;
+
+      const reportData = {
+        ...data,
+        createdAt: new Date(),
+      };
+
+      /*
+      {
+    "report_reason": "inappropriate",
+    "report_description": "asdf",
+    "PromptId": "6a358f3ffeb0e4874cffc628",
+    "reportPromptTitle": "Eum nihil amet mole",
+    "userId": "6a336c6053c1e1314629a757",
+    "userName": "Jubayer",
+    "userEmail": "jubayer@gmail.com"
+}
+      */
+
+      const isExistReport = await reportCollection.findOne({
+        promptId: data?.promptId,
+        userId: data?.userId,
+      });
+
+      if (isExistReport) {
+        return res.status(409).send({ message: "Already reported" });
+      }
+
+      const result = await reportCollection.insertOne(reportData);
       res.send(result);
     });
 
