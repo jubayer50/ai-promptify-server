@@ -28,6 +28,7 @@ async function run() {
     const promptCollection = database.collection("prompts");
     const bookmarkCollection = database.collection("bookmarks");
     const reportCollection = database.collection("reports");
+    const commentCollection = database.collection("comments");
 
     // prompts related -----------------------------------------------------------------------------------------
     app.get("/api/prompts", async (req, res) => {
@@ -171,18 +172,6 @@ async function run() {
         createdAt: new Date(),
       };
 
-      /*
-      {
-    "report_reason": "inappropriate",
-    "report_description": "asdf",
-    "PromptId": "6a358f3ffeb0e4874cffc628",
-    "reportPromptTitle": "Eum nihil amet mole",
-    "userId": "6a336c6053c1e1314629a757",
-    "userName": "Jubayer",
-    "userEmail": "jubayer@gmail.com"
-}
-      */
-
       const isExistReport = await reportCollection.findOne({
         promptId: data?.promptId,
         userId: data?.userId,
@@ -193,6 +182,44 @@ async function run() {
       }
 
       const result = await reportCollection.insertOne(reportData);
+      res.send(result);
+    });
+
+    /**
+     promptId: prompt?._id,
+      promptTitle: prompt?.prompt_title,
+      rating: rating,
+      comment: comment,
+      userId: user?.id,
+     */
+
+    // comment related ----------------------------------------------------------------------------------------------------------
+    // comment get method
+    app.get("/api/comments", async (req, res) => {
+      const query ={}
+
+      if()
+    });
+
+    // comment post method
+    app.post("/api/comments", async (req, res) => {
+      const data = req.body;
+
+      const commentData = {
+        ...data,
+        createAt: new Date(),
+      };
+
+      const isExistComment = await commentCollection.findOne({
+        promptId: data?.promptId,
+        userId: data?.userId,
+      });
+
+      if (isExistComment) {
+        return res.status(409).send({ message: "Already you commented" });
+      }
+
+      const result = await commentCollection.insertOne(commentData);
       res.send(result);
     });
 
