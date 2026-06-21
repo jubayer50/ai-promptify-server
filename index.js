@@ -24,6 +24,7 @@ async function run() {
     await client.connect();
 
     const database = client.db("aiPromptify");
+    const planCollection = database.collection("plan");
     const userCollection = database.collection("user");
     const promptCollection = database.collection("prompts");
     const bookmarkCollection = database.collection("bookmarks");
@@ -129,7 +130,7 @@ async function run() {
         query.promptId = req.query.promptId;
       }
 
-      const result = await bookmarkCollection.findOne(query);
+      const result = await bookmarkCollection.find(query).toArray();
       res.send(result || {});
     });
 
@@ -185,20 +186,21 @@ async function run() {
       res.send(result);
     });
 
-    /**
-     promptId: prompt?._id,
-      promptTitle: prompt?.prompt_title,
-      rating: rating,
-      comment: comment,
-      userId: user?.id,
-     */
-
     // comment related ----------------------------------------------------------------------------------------------------------
     // comment get method
     app.get("/api/comments", async (req, res) => {
-      const query ={}
+      const query = {};
 
-      if()
+      if (req.query.promptId) {
+        query.promptId = req.query.promptId;
+      }
+
+      if (req.query.userId) {
+        query.userId = req.query.userId;
+      }
+
+      const result = await commentCollection.find(query).toArray();
+      res.send(result);
     });
 
     // comment post method
@@ -223,6 +225,20 @@ async function run() {
       res.send(result);
     });
 
+    // plan related
+    app.get("/api/plan", async (req, res) => {
+      const query = {};
+
+      if (req.query.plan_id) {
+        query.plan_id = req.query.plan_id;
+      }
+
+      const result = await planCollection.findOne(query);
+
+      res.send(result);
+    });
+
+    // ----------------------------------------------------------------------------------------------------------------------
     await client.db("admin").command({ ping: 1 });
     console.log(
       "Pinged your deployment. You successfully connected to MongoDB!",
