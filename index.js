@@ -89,6 +89,7 @@ async function run() {
       res.send(result);
     });
 
+    // prompt update
     app.patch("/api/prompts/:id", async (req, res) => {
       const { id } = req.params;
       const { increment } = req.body;
@@ -104,6 +105,17 @@ async function run() {
       };
 
       const result = await promptCollection.updateOne(filter, updateCopyCount);
+
+      res.send(result);
+    });
+
+    // prompt delete
+    app.delete("/api/prompts/:id", async (req, res) => {
+      const { id } = req.params;
+
+      const query = { _id: new ObjectId(id) };
+
+      const result = await promptCollection.deleteOne(query);
 
       res.send(result);
     });
