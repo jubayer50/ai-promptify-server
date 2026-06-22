@@ -30,6 +30,8 @@ async function run() {
     const bookmarkCollection = database.collection("bookmarks");
     const reportCollection = database.collection("reports");
     const commentCollection = database.collection("comments");
+    const featureCollection = database.collection("features");
+    const warningCollection = database.collection("warnings");
 
     // prompts related -----------------------------------------------------------------------------------------
     app.get("/api/prompts", async (req, res) => {
@@ -182,6 +184,15 @@ async function run() {
     });
 
     // report related -----------------------------------------------------------------------------------------
+
+    // report get method
+    app.get("/api/reports", async (req, res) => {
+      const cursor = reportCollection.find();
+      const result = await cursor.toArray();
+      res.send(result);
+    });
+
+    // report post method
     app.post("/api/reports", async (req, res) => {
       const data = req.body;
 
@@ -191,7 +202,7 @@ async function run() {
       };
 
       const isExistReport = await reportCollection.findOne({
-        promptId: data?.promptId,
+        PromptId: data?.PromptId,
         userId: data?.userId,
       });
 
@@ -200,6 +211,19 @@ async function run() {
       }
 
       const result = await reportCollection.insertOne(reportData);
+      res.send(result);
+    });
+
+    // report delete method
+    app.delete("/api/reports/:id", async (req, res) => {
+      const { id } = req.params;
+
+      const query = {
+        _id: new ObjectId(id),
+      };
+
+      const result = await reportCollection.deleteOne(query);
+
       res.send(result);
     });
 
@@ -252,6 +276,42 @@ async function run() {
 
       const result = await planCollection.findOne(query);
 
+      res.send(result);
+    });
+
+    // feature related -------------------------------------------------------------------------------------------------------------
+    app.post("/api/features", async (req, res) => {
+      const featureData = req.body;
+
+      const isExitFeature = await featureCollection.findOne({
+        promptId: req.body.promptId,
+      });
+
+      if (isExitFeature) {
+        return res.status(409).send({ message: "This is already featured " });
+      }
+
+      // update prompt collection also
+      await promptCollection.updateOne(
+        {
+          _id: new ObjectId(req.body.promptId),
+        },
+        {
+          $set: {
+            featured: true,
+          },
+        },
+      );
+
+      const result = await featureCollection.insertOne(featureData);
+
+      res.send(result);
+    });
+
+    // warning related
+    app.post("/api/warnings", async (req, res) => {
+      const warningData = req.body;
+      const result = await warningCollection.insertOne(warningData);
       res.send(result);
     });
 
