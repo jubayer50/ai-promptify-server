@@ -92,19 +92,25 @@ async function run() {
     // prompt update
     app.patch("/api/prompts/:id", async (req, res) => {
       const { id } = req.params;
-      const { increment } = req.body;
+      const { increment, ...updateFields } = req.body;
 
       const filter = {
         _id: new ObjectId(id),
       };
 
-      const updateCopyCount = {
-        $inc: {
-          copyCount: increment,
-        },
-      };
+      const updateDoc = {};
 
-      const result = await promptCollection.updateOne(filter, updateCopyCount);
+      if (increment) {
+        updateDoc.$inc = {
+          copyCount: increment,
+        };
+      }
+
+      if (Object.keys(updateFields).length > 0) {
+        updateDoc.$set = updateFields;
+      }
+
+      const result = await promptCollection.updateOne(filter, updateDoc);
 
       res.send(result);
     });
