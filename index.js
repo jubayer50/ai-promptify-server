@@ -128,11 +128,10 @@ async function run() {
 
     // user related ------------------------------------------------------------------------------------------------
     app.get("/api/users", async (req, res) => {
-      const query = {};
+      const cursor = userCollection.find();
+      const result = await cursor.toArray();
 
-      if (req.query.userId) {
-        query._id = new ObjectId(req.query.userId);
-      }
+      res.send(result);
     });
 
     // bookmark related-----------------------------------------------------------------------------------------------------
