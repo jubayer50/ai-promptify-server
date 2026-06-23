@@ -355,6 +355,38 @@ async function run() {
     });
 
     // feature related -------------------------------------------------------------------------------------------------------------
+    // feature get
+    app.get("/api/features", async (req, res) => {
+      const result = await featureCollection
+        .aggregate([
+          {
+            $addFields: {
+              promptObjectId: {
+                $toObjectId: "$promptId",
+              },
+            },
+          },
+          {
+            $lookup: {
+              from: "prompts",
+              localField: "promptObjectId",
+              foreignField: "_id",
+              as: "promptData",
+            },
+          },
+          {
+            $unwind: "$promptData",
+          },
+          {
+            $limit: 6,
+          },
+        ])
+        .toArray();
+
+      res.send(result);
+    });
+
+    // feature post
     app.post("/api/features", async (req, res) => {
       const featureData = req.body;
 
