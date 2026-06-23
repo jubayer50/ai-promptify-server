@@ -32,6 +32,7 @@ async function run() {
     const commentCollection = database.collection("comments");
     const featureCollection = database.collection("features");
     const warningCollection = database.collection("warnings");
+    const paymentCollection = database.collection("payments");
 
     // prompts related -----------------------------------------------------------------------------------------
     // app.get("/api/prompts", async (req, res) => {
@@ -106,8 +107,19 @@ async function run() {
         cursor = cursor.sort({ createdAt: -1 });
       }
 
-      const result = await cursor.toArray();
-      res.send(result);
+      // pagination related
+      const page = Number(req.query.page);
+      const perPage = Number(req.query.perPage) || 12;
+
+      const skipItems = (page - 1) * perPage;
+
+      // total data
+      const totalPrompts = await promptCollection.countDocuments(query);
+
+      cursor = cursor.skip(skipItems).limit(perPage);
+
+      const prompts = await cursor.toArray();
+      res.send({ totalPrompts, prompts });
     });
 
     // get prompts single by id
@@ -376,6 +388,33 @@ async function run() {
       const warningData = req.body;
       const result = await warningCollection.insertOne(warningData);
       res.send(result);
+    });
+
+    // payment related --------------------------------------------------------------------------------------------------------------
+    app.post("/api/payments", async (req, res) => {
+      const { sessionId, userId, priceId, payAmount } = req.body;
+
+      const userData = await userCollection.updateOne(
+        { _id: new ObjectId(userId) },
+        { $set: { plan: "premium" } },
+      );
+
+      const isExistingPayment = await paymentCollection.find({
+        sessionId: sessionId,
+      });
+
+      if (isExistingPayment) {
+        return res.send({ message: "Already exist" });
+      }
+
+      const result = await paymentCollection.insertOne({
+        sessionId,
+        userId,
+        priceId,
+        payAmount,
+      });
+
+      res.send({ result, userData });
     });
 
     // ----------------------------------------------------------------------------------------------------------------------
