@@ -34,16 +34,79 @@ async function run() {
     const warningCollection = database.collection("warnings");
 
     // prompts related -----------------------------------------------------------------------------------------
+    // app.get("/api/prompts", async (req, res) => {
+    //   const query = {};
+
+    //   if (req.query.userId) {
+    //     query.userId = req.query.userId;
+    //   }
+
+    //   const cursor = await promptCollection.find(query);
+    //   const result = await cursor.toArray();
+
+    //   res.send(result);
+    // });
+
+    // get prompts method by query for search filter
     app.get("/api/prompts", async (req, res) => {
       const query = {};
 
+      // user filter
       if (req.query.userId) {
         query.userId = req.query.userId;
       }
 
-      const cursor = await promptCollection.find(query);
-      const result = await cursor.toArray();
+      // search on 3 fields
+      if (req.query.search) {
+        query.$or = [
+          {
+            prompt_title: {
+              $regex: req.query.search,
+              $options: "i",
+            },
+          },
+          {
+            tags: {
+              $regex: req.query.search,
+              $options: "i",
+            },
+          },
+          {
+            ai_tool: {
+              $regex: req.query.search,
+              $options: "i",
+            },
+          },
+        ];
+      }
 
+      // category filter
+      if (req.query.category) {
+        query.category = req.query.category;
+      }
+
+      // difficulty filter
+      if (req.query.difficulty_level) {
+        query.difficulty_level = req.query.difficulty_level;
+      }
+
+      // ai tool filter
+      if (req.query.ai_tool) {
+        query.ai_tool = req.query.ai_tool;
+      }
+
+      let cursor = promptCollection.find(query);
+
+      // sorting
+      if (req.query.sortBy === "most_copied") {
+        cursor = cursor.sort({ copyCount: -1 });
+      }
+
+      if (req.query.sortBy === "latest") {
+        cursor = cursor.sort({ createdAt: -1 });
+      }
+
+      const result = await cursor.toArray();
       res.send(result);
     });
 
