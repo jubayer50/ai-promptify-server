@@ -423,6 +423,27 @@ async function run() {
     });
 
     // payment related --------------------------------------------------------------------------------------------------------------
+    // payment get for admin
+    app.get("/api/payments", async (req, res) => {
+      const cursor = paymentCollection.find();
+      const payments = await cursor.toArray();
+
+      for (let payment of payments) {
+        const userId = payment.userId;
+
+        const user = await userCollection.findOne({
+          _id: new ObjectId(userId),
+        });
+
+        payment.userNama = user.name;
+        payment.userEmail = user.email;
+        payment.userRole = user.role;
+      }
+
+      res.send(payments);
+    });
+
+    // payment post method
     app.post("/api/payments", async (req, res) => {
       const { sessionId, userId, priceId, payAmount } = req.body;
 
@@ -431,7 +452,7 @@ async function run() {
         { $set: { plan: "premium" } },
       );
 
-      const isExistingPayment = await paymentCollection.find({
+      const isExistingPayment = await paymentCollection.findOne({
         sessionId: sessionId,
       });
 
@@ -447,6 +468,87 @@ async function run() {
       });
 
       res.send({ result, userData });
+    });
+
+    // top creator section ---------------------------------------------------------------------------------------------------------
+    app.get("/api/top-creators", async (req, res) => {
+      const result = await promptCollection
+        .aggregate([
+          {
+            $match: {
+              userId: {
+                $exists: true,
+                $ne: null,
+              },
+            },
+          },
+
+          // user acording  user prompt count
+          {
+            $group: {
+              _id: "$userId",
+              totalPrompts: {
+                $sum: 1,
+              },
+            },
+          },
+
+          // descending sort
+          {
+            $sort: {
+              totalPrompts: -1,
+            },
+          },
+
+          // string -> ObjectId
+          {
+            $addFields: {
+              userObjectId: {
+                $toObjectId: "$_id",
+              },
+            },
+          },
+
+          // users collection join
+          {
+            $lookup: {
+              from: "users",
+              localField: "userObjectId",
+              foreignField: "_id",
+              as: "creator",
+            },
+          },
+
+          // empty creator  document
+          {
+            $unwind: {
+              path: "$creator",
+              preserveNullAndEmptyArrays: true,
+            },
+          },
+
+          // only needed fields
+          {
+            $project: {
+              _id: 0,
+              userId: "$_id",
+              totalPrompts: 1,
+              name: "$creator.name",
+              email: "$creator.email",
+              image: "$creator.image",
+            },
+          },
+
+          // top 6
+          {
+            $limit: 4,
+          },
+        ])
+        .toArray();
+
+      console.log(result);
+
+      res.send(result);
     });
 
     // ----------------------------------------------------------------------------------------------------------------------
