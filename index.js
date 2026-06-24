@@ -475,78 +475,48 @@ async function run() {
       const result = await promptCollection
         .aggregate([
           {
-            $match: {
-              userId: {
-                $exists: true,
-                $ne: null,
-              },
-            },
-          },
-
-          // user acording  user prompt count
-          {
             $group: {
               _id: "$userId",
-              totalPrompts: {
-                $sum: 1,
-              },
+              totalPrompts: { $sum: 1 },
             },
           },
-
-          // descending sort
           {
             $sort: {
               totalPrompts: -1,
             },
           },
-
-          // string -> ObjectId
-          {
-            $addFields: {
-              userObjectId: {
-                $toObjectId: "$_id",
-              },
-            },
-          },
-
-          // users collection join
-          {
-            $lookup: {
-              from: "users",
-              localField: "userObjectId",
-              foreignField: "_id",
-              as: "creator",
-            },
-          },
-
-          // empty creator  document
-          {
-            $unwind: {
-              path: "$creator",
-              preserveNullAndEmptyArrays: true,
-            },
-          },
-
-          // only needed fields
-          {
-            $project: {
-              _id: 0,
-              userId: "$_id",
-              totalPrompts: 1,
-              name: "$creator.name",
-              email: "$creator.email",
-              image: "$creator.image",
-            },
-          },
-
-          // top 6
           {
             $limit: 4,
           },
+          {
+            $lookup: {
+              from: "user",
+              let: { userIdString: "$_id" },
+              pipeline: [
+                {
+                  $match: {
+                    $expr: {
+                      $eq: [{ $toString: "$_id" }, "$$userIdString"],
+                    },
+                  },
+                },
+              ],
+              as: "creator",
+            },
+          },
+          {
+            $unwind: "$creator",
+          },
+          {
+            $project: {
+              _id: 0,
+              totalPrompts: 1,
+              name: "$creator.name",
+              image: "$creator.image",
+            },
+          },
         ])
         .toArray();
-
-      console.log(result);
 
       res.send(result);
     });
