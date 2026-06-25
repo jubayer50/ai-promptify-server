@@ -108,3 +108,15 @@ It ensures secure communication between frontend and database using REST APIs, J
 - Manage Payments
 - Handle Reports
 - Analytics APIs
+
+---
+
+## 📦 Projects links:
+
+### Front-End Live Link: https://ai-promptify.vercel.app/
+
+### Client Repository Link: https://github.com/jubayer50/ai-promptify
+
+### Server Repository Link: https://github.com/jubayer50/ai-promptify-server
+
+---
