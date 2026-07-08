@@ -251,9 +251,22 @@ async function run() {
     });
 
     // user related ------------------------------------------------------------------------------------------------
-    app.get("/api/users", async (req, res) => {
+    app.get("/api/users", verifyToken, adminVerify, async (req, res) => {
       const cursor = userCollection.find();
       const result = await cursor.toArray();
+
+      res.send(result);
+    });
+
+    // delete user
+    app.delete("/api/users/:id", verifyToken, adminVerify, async (req, res) => {
+      const { id } = req.params;
+
+      const query = {
+        _id: new ObjectId(id),
+      };
+
+      const result = await userCollection.deleteOne(query);
 
       res.send(result);
     });
@@ -393,6 +406,7 @@ async function run() {
       res.send(result);
     });
 
+    // --------------------------------------------------------------------------------------------------------------------------
     // plan related
     app.get("/api/plan", async (req, res) => {
       const query = {};
@@ -481,15 +495,15 @@ async function run() {
       const payments = await cursor.toArray();
 
       for (let payment of payments) {
-        const userId = payment.userId;
+        const userId = payment?.userId;
 
         const user = await userCollection.findOne({
           _id: new ObjectId(userId),
         });
 
-        payment.userNama = user.name;
-        payment.userEmail = user.email;
-        payment.userRole = user.role;
+        payment.userNama = user?.name;
+        payment.userEmail = user?.email;
+        payment.userRole = user?.role;
       }
 
       res.send(payments);
