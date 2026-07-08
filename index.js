@@ -258,6 +258,22 @@ async function run() {
       res.send(result);
     });
 
+    // user role update method
+    app.patch("/api/users/:id", verifyToken, adminVerify, async (req, res) => {
+      const { id } = req.params;
+
+      const updateRole = req.body;
+
+      const filter = { _id: new ObjectId(id) };
+
+      const updateUser = {
+        $set: { ...updateRole },
+      };
+
+      const result = await userCollection.updateOne(filter, updateUser);
+      res.send(result);
+    });
+
     // delete user
     app.delete("/api/users/:id", verifyToken, adminVerify, async (req, res) => {
       const { id } = req.params;
